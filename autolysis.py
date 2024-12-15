@@ -178,7 +178,7 @@ def create_readme(summary_stats, missing_values, corr_matrix, outliers, output_d
             # Distribution Plot Section
             f.write("## Distribution of Data\n")
             f.write("Below is the distribution plot of the first numerical column in the dataset:\n\n")
-            f.write("![Distribution](distribution_.png)\n\n")
+            f.write("![Distribution](distribution_overall.png)\n\n")
 
             # Conclusion Section
             f.write("## Conclusion\n")
