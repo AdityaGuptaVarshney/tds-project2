@@ -204,9 +204,6 @@ def create_readme(summary_stats, missing_values, corr_matrix, outliers, output_d
         print(f"Error creating README file: {e}")
         return None
 
-import os
-import json
-import requests
 
 def question_llm(prompt, context):
     print("Generating story using LLM...")  # Debugging line
