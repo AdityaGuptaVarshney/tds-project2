@@ -101,7 +101,7 @@ def visualize_data(corr_matrix, outliers, df, output_dir):
             plt.figure(figsize=(10, 6))
             sns.histplot(df[first_numeric_column], kde=True, color='blue', bins=30)
             plt.title(f'Distribution of {first_numeric_column}')
-            dist_plot_file = os.path.join(output_dir, f'distribution_overall{first_numeric_column}.png')
+            dist_plot_file = os.path.join(output_dir, f'distribution_overall.png')
             plt.savefig(dist_plot_file)
             plt.close()
 
