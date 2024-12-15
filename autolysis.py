@@ -28,81 +28,88 @@ import openai  # Make sure you install this library: pip install openai
 
 # Function to analyze the data (basic summary stats, missing values, correlation matrix)
 def analyze_data(df):
-    print("Analyzing the data...")  # Debugging line
-    # Summary statistics for numerical columns
-    summary_stats = df.describe()
+    try:
+        # Generate summary statistics for numerical columns
+        summary_stats = df.describe()
 
-    # Check for missing values
-    missing_values = df.isnull().sum()
+        # Count missing values in each column
+        missing_values = df.isnull().sum()
 
-    # Select only numeric columns for correlation matrix
-    numeric_df = df.select_dtypes(include=[np.number])
+        # Select numeric columns for correlation analysis
+        numeric_df = df.select_dtypes(include=[np.number])
 
-    # Correlation matrix for numerical columns
-    corr_matrix = numeric_df.corr() if not numeric_df.empty else pd.DataFrame()
+        # Compute correlation matrix for numeric columns, fallback to empty DataFrame if no numeric columns exist
+        corr_matrix = numeric_df.corr() if not numeric_df.empty else pd.DataFrame()
 
-    print("Data analysis complete.")  # Debugging line
-    return summary_stats, missing_values, corr_matrix
+        return summary_stats, missing_values, corr_matrix
+
+    except (AttributeError, ValueError, TypeError) as e:
+        # Handle specific exceptions and return safe fallback values
+        # Empty DataFrame for summary statistics and correlations, empty Series for missing values
+        return pd.DataFrame(), pd.Series(dtype=int), pd.DataFrame()
 
 
 # Function to detect outliers using the IQR method
 def detect_outliers(df):
-    print("Detecting outliers...")  # Debugging line
-    # Select only numeric columns
-    df_numeric = df.select_dtypes(include=[np.number])
+    try:
+        # Select only numeric columns
+        df_numeric = df.select_dtypes(include=[np.number])
 
-    # Apply the IQR method to find outliers in the numeric columns
-    Q1 = df_numeric.quantile(0.25)
-    Q3 = df_numeric.quantile(0.75)
-    IQR = Q3 - Q1
-    outliers = ((df_numeric < (Q1 - 1.5 * IQR)) | (df_numeric > (Q3 + 1.5 * IQR))).sum()
+        # Apply the IQR method to find outliers in the numeric columns
+        Q1 = df_numeric.quantile(0.25)
+        Q3 = df_numeric.quantile(0.75)
+        IQR = Q3 - Q1
+        outliers = ((df_numeric < (Q1 - 1.5 * IQR)) | (df_numeric > (Q3 + 1.5 * IQR))).sum()
 
-    print("Outliers detection complete.")  # Debugging line
-    return outliers
+        return outliers
 
+    except (AttributeError, ValueError, TypeError) as e:
+        # Handle specific exceptions and return a fallback value
+        # Return an empty Series in case of errors for consistency
+        return pd.Series(dtype=int)
 
 # Function to generate visualizations (correlation heatmap, outliers plot, and distribution plot)
 def visualize_data(corr_matrix, outliers, df, output_dir):
-    print("Generating visualizations...")  # Debugging line
-    # Generate a heatmap for the correlation matrix
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
-    plt.title('Correlation Matrix')
-    heatmap_file = os.path.join(output_dir, 'correlation_matrix.png')
-    plt.savefig(heatmap_file)
-    plt.close()
+    try:
+        # Generate a heatmap for the correlation matrix
+        heatmap_file = None
+        if not corr_matrix.empty:
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f", linewidths=0.5)
+            plt.title('Correlation Matrix')
+            heatmap_file = os.path.join(output_dir, 'correlation_matrix.png')
+            plt.savefig(heatmap_file)
+            plt.close()
 
-    # Check if there are outliers to plot
-    if not outliers.empty and outliers.sum() > 0:
-        # Plot the outliers
-        plt.figure(figsize=(10, 6))
-        outliers.plot(kind='bar', color='red')
-        plt.title('Outliers Detection')
-        plt.xlabel('Columns')
-        plt.ylabel('Number of Outliers')
-        outliers_file = os.path.join(output_dir, 'outliers.png')
-        plt.savefig(outliers_file)
-        plt.close()
-    else:
-        print("No outliers detected to visualize.")
-        outliers_file = None  # No file created for outliers
+        # Check if there are outliers to plot
+        outliers_file = None
+        if not outliers.empty and outliers.sum() > 0:
+            plt.figure(figsize=(10, 6))
+            outliers.plot(kind='bar', color='red')
+            plt.title('Outliers Detection')
+            plt.xlabel('Columns')
+            plt.ylabel('Number of Outliers')
+            outliers_file = os.path.join(output_dir, 'outliers.png')
+            plt.savefig(outliers_file)
+            plt.close()
 
-    # Generate a distribution plot for the first numeric column
-    numeric_columns = df.select_dtypes(include=[np.number]).columns
-    if len(numeric_columns) > 0:
-        first_numeric_column = numeric_columns[0]  # Get the first numeric column
-        plt.figure(figsize=(10, 6))
-        sns.histplot(df[first_numeric_column], kde=True, color='blue', bins=30)
-        plt.title(f'Distribution')
-        dist_plot_file = os.path.join(output_dir, f'distribution_.png')
-        plt.savefig(dist_plot_file)
-        plt.close()
-    else:
-        dist_plot_file = None  # No numeric columns to plot
+        # Generate a distribution plot for the first numeric column
+        dist_plot_file = None
+        numeric_columns = df.select_dtypes(include=[np.number]).columns
+        if len(numeric_columns) > 0:
+            first_numeric_column = numeric_columns[0]
+            plt.figure(figsize=(10, 6))
+            sns.histplot(df[first_numeric_column], kde=True, color='blue', bins=30)
+            plt.title(f'Distribution of {first_numeric_column}')
+            dist_plot_file = os.path.join(output_dir, f'distribution_{first_numeric_column}.png')
+            plt.savefig(dist_plot_file)
+            plt.close()
 
-    print("Visualizations generated.")  # Debugging line
-    return heatmap_file, outliers_file, dist_plot_file
+        return heatmap_file, outliers_file, dist_plot_file
 
+    except (AttributeError, ValueError, TypeError, KeyError, IndexError, FileNotFoundError) as e:
+        # Handle specific exceptions and return fallback values
+        return None, None, None
 
 # Function to create the README.md with a narrative and visualizations
 def create_readme(summary_stats, missing_values, corr_matrix, outliers, output_dir):
